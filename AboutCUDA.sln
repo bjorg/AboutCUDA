@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AboutCuda", "AboutCuda.csproj", "{03837833-2248-4EDB-940C-CBD49EB411F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AboutCUDA", "AboutCUDA.csproj", "{03837833-2248-4EDB-940C-CBD49EB411F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
