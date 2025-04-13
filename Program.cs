@@ -1,4 +1,5 @@
-﻿// AboutCuda
+﻿// AboutCUDA
+//
 // Copyright (C) 2025 - Steve Bjorg
 //
 // This program is free software: you can redistribute it and/or modify
@@ -20,23 +21,27 @@ using ManagedCuda.BasicTypes;
 using static System.Console;
 
 // define command line options
-var allOption = new Option<bool>([ "--all", "-a" ], "Show all CUDA properties");
-var featuresOption = new Option<bool>([ "--features", "-f" ], "Show all CUDA properties");
+var allOption = new Option<bool>([ "--all", "-a" ], "Show all properties");
+var capabilityOption = new Option<bool>([ "--capability", "-c" ], "Show capabilities and enabled features");
+var textureOption = new Option<bool>([ "--texture", "-t" ], "Show texture/surface properties");
+var deviceTopologyOption = new Option<bool>([ "--device", "-d" ], "Show device topology properties");
 var quietOption = new Option<bool>([ "--quiet", "-q" ],"Suppress banner");
 
 // define command
 var rootCommand = new RootCommand("Show CUDA properties") {
     allOption,
-    featuresOption,
+    capabilityOption,
+    textureOption,
+    deviceTopologyOption,
     quietOption
 };
-rootCommand.SetHandler(ShowCudaProperties, allOption, featuresOption, quietOption);
+rootCommand.SetHandler(ShowCudaProperties, allOption, capabilityOption, textureOption, deviceTopologyOption, quietOption);
 rootCommand.Invoke(args);
 return;
 
-static void ShowCudaProperties(bool showAll, bool showFeatures, bool hideBanner) {
+static void ShowCudaProperties(bool showAll, bool showCapabilities, bool showTexture, bool showDeviceTopology, bool hideBanner) {
     if(!hideBanner) {
-        WriteLine("AboutCuda - 2025 (c) Steve Bjorg");
+        WriteLine("AboutCUDA - 2025 (c) Steve Bjorg");
         WriteLine();
     }
 
@@ -44,176 +49,165 @@ static void ShowCudaProperties(bool showAll, bool showFeatures, bool hideBanner)
     var deviceCount = CudaContext.GetDeviceCount();
     if(deviceCount == 0) {
         WriteLine("No CUDA devices found");
-        WriteLine();
         return;
     }
     WriteLine($"Found {deviceCount} device(s)");
-    WriteLine();
 
     // loop over each CUDA device
     for(var deviceId = 0; deviceId < deviceCount; ++deviceId) {
         var info = CudaContext.GetDeviceInfo(deviceId);
+        WriteLine();
         WriteLine($"=== Device #{deviceId}: {info.DeviceName} ===");
         WriteLine();
-
         WriteLine("--- Overview ---");
         WriteLine($"* Driver Version: {info.DriverVersion}");
         WriteLine($"* Compute Capability: {info.ComputeCapability}");
         WriteLine($"* Compute Mode: {info.ComputeMode}");
         WriteLine();
-
         WriteLine("--- Processors ---");
         WriteLine($"* Processors: {info.MultiProcessorCount}");
         WriteLine($"* Clock Rate: {ConvertKiloHertz(info.ClockRate)}");
         WriteLine($"* Warp Size: {info.WarpSize}");
+        WriteLine($"* Registers/Block: {info.RegistersPerBlock}");
+        WriteLine($"* Shared Memory/Block: {ConvertBytes(info.ReservedSharedMemoryPerBlock)}");
         WriteLine($"* Max Grid Dimensions: {info.MaxGridDim}");
         WriteLine($"* Max Block Dimensions: {info.MaxBlockDim}");
         WriteLine($"* Max Blocks/Processor: {info.MaxBlocksPerMultiProcessor}");
         WriteLine($"* Max Threads/Processor: {info.MaxThreadsPerMultiProcessor}");
         WriteLine($"* Max Registers/Processor: {info.MaxRegistersPerMultiprocessor}");
-        WriteLine($"* Max Shared Memory/Processor: {info.MaxSharedMemoryPerMultiprocessor}");
-        WriteLine();
-
-        WriteLine("--- Blocks ---");
+        WriteLine($"* Max Shared Memory/Processor: {ConvertBytes(info.MaxSharedMemoryPerMultiprocessor)}");
         WriteLine($"* Max Threads/Block: {info.MaxThreadsPerBlock}");
-        WriteLine($"* Registers/Block: {info.RegistersPerBlock}");
-        WriteLine($"* Shared Memory/Block: {ConvertBytes(info.SharedMemoryPerBlock)}");
-        WriteLine($"* Max Shared Memory/Block: {ConvertBytes(info.MaxSharedMemoryPerBlockOptin)}");
+        WriteLine($"* Max Shared Memory/Block: {ConvertBytes(info.SharedMemoryPerBlock)}");
+        WriteLine($"* Max Shared Memory (Optin)/Block: {ConvertBytes(info.MaxSharedMemoryPerBlockOptin)}");
         WriteLine();
-
         WriteLine("--- Memory ---");
         WriteLine($"* Global: {ConvertBytes(info.TotalGlobalMemory)}");
         WriteLine($"* Constant: {ConvertBytes(info.TotalConstantMemory)}");
         WriteLine($"* Clock Rate: {ConvertKiloHertz(info.MemoryClockRate)}");
-        WriteLine($"* Managed Memory: {info.ManagedMemory}");
-        WriteLine($"* Unified Addressing: {info.UnifiedAddressing}");
-        WriteLine($"* Integrated: {info.Integrated}");
-        WriteLine($"* ECC Enabled: {info.EccEnabled}");
+        WriteLine($"* Managed Memory: {ConvertBool(info.ManagedMemory)}");
+        WriteLine($"* Unified Addressing: {ConvertBool(info.UnifiedAddressing)}");
+        WriteLine($"* Integrated: {ConvertBool(info.Integrated)}");
+        WriteLine($"* ECC Enabled: {ConvertBool(info.EccEnabled)}");
         WriteLine($"* L2 Cache Size: {ConvertBytes(info.L2CacheSize)}");
         WriteLine($"* Max Memory Pitch: {info.MemoryPitch}");
         WriteLine($"* Max Persisting L2 Cache Size: {ConvertBytes(info.MaxPersistingL2CacheSize)} bytes");
         WriteLine($"* Global Memory Bus Width: {info.GlobalMemoryBusWidth} bits");
-        WriteLine();
 
-        if(showFeatures || showAll) {
-            WriteLine("--- Features ---");
-            WriteLine($"* Async Engine Count: {info.AsyncEngineCount}");
-            WriteLine($"* Single To Double Precision Perf Ratio: {info.SingleToDoublePrecisionPerfRatio}");
-            WriteLine($"* Global L1 Cache Supported: {info.GlobalL1CacheSupported}");
-            WriteLine($"* Local L1 Cache Supported: {info.LocalL1CacheSupported}");
-            WriteLine($"* Concurrent Kernels: {info.ConcurrentKernels}");
-            WriteLine($"* Cooperative Launch: {info.CooperativeLaunch}");
-            WriteLine($"* GPU Overlap: {info.GpuOverlap}");
-            WriteLine($"* Compute Preemption: {info.ComputePreemptionSupported}");
-            WriteLine($"* Concurrent Managed Access: {info.ConcurrentManagedAccess}");
-            WriteLine($"* Generic Compression: {info.GenericCompressionSupported}");
-            WriteLine($"* DMA Buffer: {info.DmaBufSupported}");
-            WriteLine($"* Host Memory Register: {info.HostRegisterSupported}");
-            WriteLine($"* Pageable Memory Access: {info.PageableMemoryAccess}");
-            WriteLine($"* Stream Priorities: {info.SupportsStreamPriorities}");
-            WriteLine($"* Unified Function Pointers: {info.UnifiedFunctionPointers}");
-            WriteLine($"* Read Only Host Register: {info.ReadOnlyHostRegisterSupported}");
-            WriteLine($"* Cluster Launch: {info.ClusterLaunch}");
-            WriteLine($"* Multi Cast: {info.MultiCastSupported}");
-            WriteLine($"* Map Host Memory: {info.CanMapHostMemory}");
-            WriteLine($"* Host Native Atomic: {info.HostNativeAtomicSupported}");
-            WriteLine($"* Can Use Host Pointer For Registered Memory: {info.CanUseHostPointerForRegisteredMem}");
-            WriteLine($"* Can Use 64-Bit Stream Memory Operations: {info.CanUse64BitStreamMemOps}");
-            WriteLine($"* Can Use CU_STREAM_WAIT_VALUE_NOR for Memory Operations: {info.CanUseStreamWaitValueNOr}");
-            WriteLine($"* Can Flush Remote Writes: {info.CanFlushRemoteWrites}");
-            WriteLine($"* Pageable Memory Access Uses Host Page Tables: {info.PageableMemoryAccessUsesHostPageTables}");
-            WriteLine($"* Direct Managed Memory Access From Host: {info.DirectManagedMemoryAccessFromHost}");
-            WriteLine($"* Virtual Memory Management Supported: {info.VirtualMemoryManagementSupported}");
+        // check if texture/surface properties should be shown
+        if(showTexture || showAll) {
             WriteLine();
+            WriteLine("--- Texture Properties ---");
+            WriteLine($"* Texture Alignment: {info.TextureAlign}");
+            WriteLine($"* Texture Pitch Alignment: {info.TexturePitchAlignment}");
+            WriteLine($"* Max Texture1D Size: ({info.MaximumTexture1DWidth})");
+            WriteLine($"* Max Texture1D Mipmapped Size: ({info.MaximumTexture1DMipmappedWidth})");
+            WriteLine($"* Max Texture1D Layered Width: {info.MaximumTexture1DLayeredWidth}");
+            WriteLine($"* Max Texture1D Layered Layers: {info.MaximumTexture1DLayeredLayers}");
+            WriteLine($"* Max Texture2D Size: ({info.MaximumTexture2DWidth}, {info.MaximumTexture2DHeight})");
+            WriteLine($"* Max Texture2D Mipmapped Size: ({info.MaximumTexture2DMipmappedWidth}, {info.MaximumTexture2DMipmappedHeight})");
+            WriteLine($"* Max Texture2D Array Width: {info.MaximumTexture2DArrayWidth}");
+            WriteLine($"* Max Texture2D Array Height: {info.MaximumTexture2DArrayHeight}");
+            WriteLine($"* Max Texture2D Array Num Slices: {info.MaximumTexture2DArrayNumSlices}");
+            WriteLine($"* Max Texture2D Linear Width: {info.MaximumTexture2DLinearWidth}");
+            WriteLine($"* Max Texture2D Linear Height: {info.MaximumTexture2DLinearHeight}");
+            WriteLine($"* Max Texture2D Linear Pitch: {info.MaximumTexture2DLinearPitch}");
+            WriteLine($"* Max Texture3D Size: ({info.MaximumTexture3DWidth}, {info.MaximumTexture3DHeight}, {info.MaximumTexture3DDepth})");
+            WriteLine($"* Max Texture Cube Map Width: {info.MaximumTextureCubeMapWidth}");
+            WriteLine($"* Max Texture Cube Map Layered Width: {info.MaximumTextureCubeMapLayeredWidth}");
+            WriteLine($"* Max Texture Cube Map Layered Layers: {info.MaximumTextureCubeMapLayeredLayers}");
+            WriteLine();
+            WriteLine("--- Surface Properties ---");
+            WriteLine($"* Surface Alignment: {info.SurfaceAllignment}");
+            WriteLine($"* Max Surface1D Size: ({info.MaximumSurface1DWidth})");
+            WriteLine($"* Max Surface1D Layered Width: {info.MaximumSurface1DLayeredWidth}");
+            WriteLine($"* Max Surface1D Layered Layers: {info.MaximumSurface1DLayeredLayers}");
+            WriteLine($"* Max Surface2D Size: ({info.MaximumSurface2DWidth}, {info.MaximumSurface2DHeight})");
+            WriteLine($"* Max Surface2D Layered Width: {info.MaximumSurface2DLayeredWidth}");
+            WriteLine($"* Max Surface2D Layered Height: {info.MaximumSurface2DLayeredHeight}");
+            WriteLine($"* Max Surface2D Layered Layers: {info.MaximumSurface2DLayeredLayers}");
+            WriteLine($"* Max Surface3D Size: ({info.MaximumSurface3DWidth}, {info.MaximumSurface3DHeight}, {info.MaximumSurface3DDepth})");
+            WriteLine($"* Max Surface Cubemap Width: {info.MaximumSurfaceCubemapWidth}");
+            WriteLine($"* Max Surface Cubemap Layered Width: {info.MaximumSurfaceCubemapLayeredWidth}");
+            WriteLine($"* Max Surface Cubemap Layered Layers: {info.MaximumSurfaceCubemapLayeredLayers}");
         }
 
-        // check if all properties should be shown
-        if(showAll) {
-            WriteLine("--- NUMA ---");
-            WriteLine($"* Config: {info.NumaConfig}");
-            WriteLine($"* Device ID: {info.NumaID}");
-            WriteLine($"* Host ID: {info.HostNumaID}");
-            WriteLine($"* Host NUMA Multinode IPC Supported: {info.HostNUMAMultinodeIPCSupported}");
+        // check if hardware topology properties should be shown
+        if(showDeviceTopology) {
             WriteLine();
-
-            WriteLine("--- PCI ---");
+            WriteLine("--- Device Topology ---");
+            WriteLine($"* NUMA Config: {info.NumaConfig}");
+            WriteLine($"* NUMA Device ID: {info.NumaID}");
+            WriteLine($"* NUMA Host ID: {info.HostNumaID}");
+            WriteLine($"* NUMA Host NUMA Multinode IPC Supported: {ConvertBool(info.HostNUMAMultinodeIPCSupported)}");
             WriteLine($"* PCI Bus ID: {info.PciBusId}");
             WriteLine($"* PCI Device ID: {info.PciDeviceId}");
             WriteLine($"* PCI Domain ID: {info.PCIDomainID}");
             WriteLine($"* GPU PCI Device ID: {info.GpuPciDeviceID}");
             WriteLine($"* GPU PCI Subsystem ID: {info.GpuPciSubsystemID}");
-            WriteLine();
+            WriteLine($"* Multi GPU Board: {info.MultiGPUBoard}");
+            WriteLine($"* Multi GPU Board Group ID: {info.MultiGPUBoardGroupID}");
+        }
 
-            WriteLine("--- Misc. ---");
-            WriteLine($"* SurfaceAllignment: {info.SurfaceAllignment}");
-            WriteLine($"* TextureAlign: {info.TextureAlign}");
-            WriteLine($"* TccDrivelModel: {info.TccDrivelModel}");
-            WriteLine($"* TexturePitchAlignment: {info.TexturePitchAlignment}");
-            WriteLine($"* TextureAlign: {info.TextureAlign}");
-            WriteLine($"* KernelExecTimeoutEnabled: {info.KernelExecTimeoutEnabled}");
-            WriteLine($"* MaximumTexture1DWidth: {info.MaximumTexture1DWidth}");
-            WriteLine($"* MaximumTexture2DWidth: {info.MaximumTexture2DWidth}");
-            WriteLine($"* MaximumTexture2DHeight: {info.MaximumTexture2DHeight}");
-            WriteLine($"* MaximumTexture3DWidth: {info.MaximumTexture3DWidth}");
-            WriteLine($"* MaximumTexture3DHeight: {info.MaximumTexture3DHeight}");
-            WriteLine($"* MaximumTexture3DDepth: {info.MaximumTexture3DDepth}");
-            WriteLine($"* MaximumTexture2DArrayWidth: {info.MaximumTexture2DArrayWidth}");
-            WriteLine($"* MaximumTexture2DArrayHeight: {info.MaximumTexture2DArrayHeight}");
-            WriteLine($"* MaximumTexture2DArrayNumSlices: {info.MaximumTexture2DArrayNumSlices}");
-            WriteLine($"* MaximumTexture1DLayeredWidth: {info.MaximumTexture1DLayeredWidth}");
-            WriteLine($"* MaximumTexture1DLayeredLayers: {info.MaximumTexture1DLayeredLayers}");
-            WriteLine($"* MaximumTextureCubeMapWidth: {info.MaximumTextureCubeMapWidth}");
-            WriteLine($"* MaximumTextureCubeMapLayeredWidth: {info.MaximumTextureCubeMapLayeredWidth}");
-            WriteLine($"* MaximumTextureCubeMapLayeredLayers: {info.MaximumTextureCubeMapLayeredLayers}");
-            WriteLine($"* MaximumSurface1DWidth: {info.MaximumSurface1DWidth}");
-            WriteLine($"* MaximumSurface2DWidth: {info.MaximumSurface2DWidth}");
-            WriteLine($"* MaximumSurface2DHeight: {info.MaximumSurface2DHeight}");
-            WriteLine($"* MaximumSurface3DWidth: {info.MaximumSurface3DWidth}");
-            WriteLine($"* MaximumSurface3DHeight: {info.MaximumSurface3DHeight}");
-            WriteLine($"* MaximumSurface3DDepth: {info.MaximumSurface3DDepth}");
-            WriteLine($"* MaximumSurface1DLayeredWidth: {info.MaximumSurface1DLayeredWidth}");
-            WriteLine($"* MaximumSurface1DLayeredLayers: {info.MaximumSurface1DLayeredLayers}");
-            WriteLine($"* MaximumSurface2DLayeredWidth: {info.MaximumSurface2DLayeredWidth}");
-            WriteLine($"* MaximumSurface2DLayeredHeight: {info.MaximumSurface2DLayeredHeight}");
-            WriteLine($"* MaximumSurface2DLayeredLayers: {info.MaximumSurface2DLayeredLayers}");
-            WriteLine($"* MaximumSurfaceCubemapWidth: {info.MaximumSurfaceCubemapWidth}");
-            WriteLine($"* MaximumSurfaceCubemapLayeredWidth: {info.MaximumSurfaceCubemapLayeredWidth}");
-            WriteLine($"* MaximumSurfaceCubemapLayeredLayers: {info.MaximumSurfaceCubemapLayeredLayers}");
-            WriteLine($"* MaximumTexture2DLinearWidth: {info.MaximumTexture2DLinearWidth}");
-            WriteLine($"* MaximumTexture2DLinearHeight: {info.MaximumTexture2DLinearHeight}");
-            WriteLine($"* MaximumTexture2DLinearPitch: {info.MaximumTexture2DLinearPitch}");
-            WriteLine($"* MaximumTexture2DMipmappedWidth: {info.MaximumTexture2DMipmappedWidth}");
-            WriteLine($"* MaximumTexture2DMipmappedHeight: {info.MaximumTexture2DMipmappedHeight}");
-            WriteLine($"* MaximumTexture1DMipmappedWidth: {info.MaximumTexture1DMipmappedWidth}");
-            WriteLine($"* MultiGPUBoard: {info.MultiGPUBoard}");
-            WriteLine($"* MultiGPUBoardGroupID: {info.MultiGPUBoardGroupID}");
-            WriteLine($"* CooperativeMultiDeviceLaunch: {info.CooperativeMultiDeviceLaunch}");
-            WriteLine($"* HandleTypePosixFileDescriptorSupported: {info.HandleTypePosixFileDescriptorSupported}");
-            WriteLine($"* HandleTypeWin32HandleSupported: {info.HandleTypeWin32HandleSupported}");
-            WriteLine($"* HandleTypeWin32KMTHandleSupported: {info.HandleTypeWin32KMTHandleSupported}");
-            WriteLine($"* MaxAccessPolicyWindowSize: {info.MaxAccessPolicyWindowSize}");
-            WriteLine($"* GPUDirectRDMAWithCudaVMMSupported: {info.GPUDirectRDMAWithCudaVMMSupported}");
-            WriteLine($"* ReservedSharedMemoryPerBlock: {info.ReservedSharedMemoryPerBlock}");
-            WriteLine($"* SparseCudaArraySupported: {info.SparseCudaArraySupported}");
-            WriteLine($"* GpuDirectRDMASupported: {info.GpuDirectRDMASupported}");
-            WriteLine($"* GpuDirectRDMAFlushWritesOptions: {info.GpuDirectRDMAFlushWritesOptions}");
-            WriteLine($"* GpuDirectRDMAWritesOrdering: {info.GpuDirectRDMAWritesOrdering}");
-            WriteLine($"* MempoolSupportedHandleTypes: {info.MempoolSupportedHandleTypes}");
-            WriteLine($"* DeferredMappingCudaArraySupported: {info.DeferredMappingCudaArraySupported}");
-            WriteLine($"* IPCEventSupported: {info.IPCEventSupported}");
-            WriteLine($"* MemSyncDomainCount: {info.MemSyncDomainCount}");
-            WriteLine($"* TensorMapAccessSupported: {info.TensorMapAccessSupported}");
-            WriteLine($"* HandleTypeFabricSupported: {info.HandleTypeFabricSupported}");
-            WriteLine($"* MultiCastSupported: {info.MultiCastSupported}");
-            WriteLine($"* MPSEnabled: {info.MPSEnabled}");
-            WriteLine($"* D3D12CIGSupported: {info.D3D12CIGSupported}");
-            WriteLine($"* MemDecompressAlgorithmMask: {info.MemDecompressAlgorithmMask}");
-            WriteLine($"* MemDecompressMaximumLength: {info.MemDecompressMaximumLength}");
+        // check if capability properties should be shown
+        if(showCapabilities || showAll) {
             WriteLine();
+            WriteLine("--- Features ---");
+            WriteLine($"* Async Engine Count: {info.AsyncEngineCount}");
+            WriteLine($"* Single To Double Precision Perf Ratio: {info.SingleToDoublePrecisionPerfRatio}");
+            WriteLine($"* Kernel Exec Timeout Enabled: {ConvertBool(info.KernelExecTimeoutEnabled)}");
+            WriteLine($"* TCC Driver Model Enabled: {ConvertBool(info.TccDrivelModel)}");
+            WriteLine($"* MPS Enabled: {ConvertBool(info.MPSEnabled)}");
+            WriteLine($"* GPU Direct RDMA Flush WritesOptions: {info.GpuDirectRDMAFlushWritesOptions}");
+            WriteLine($"* GPU Direct RDMA Writes Ordering: {info.GpuDirectRDMAWritesOrdering}");
+            WriteLine($"* Mem Sync Domain Count: {info.MemSyncDomainCount}");
+            WriteLine($"* Mem Decompress Algorithm Mask: {info.MemDecompressAlgorithmMask}");
+            WriteLine($"* Mem Decompress Maximum Length: {info.MemDecompressMaximumLength}");
+            WriteLine($"* Global L1 Cache Supported: {ConvertBool(info.GlobalL1CacheSupported)}");
+            WriteLine($"* Local L1 Cache Supported: {ConvertBool(info.LocalL1CacheSupported)}");
+            WriteLine($"* Concurrent Kernels Supported: {ConvertBool(info.ConcurrentKernels)}");
+            WriteLine($"* Cooperative Launch Supported: {ConvertBool(info.CooperativeLaunch)}");
+            WriteLine($"* GPU Overlap Supported: {ConvertBool(info.GpuOverlap)}");
+            WriteLine($"* Compute Preemption Supported: {ConvertBool(info.ComputePreemptionSupported)}");
+            WriteLine($"* Concurrent Managed Access Supported: {ConvertBool(info.ConcurrentManagedAccess)}");
+            WriteLine($"* Generic Compression Supported: {ConvertBool(info.GenericCompressionSupported)}");
+            WriteLine($"* DMA Buffer Supported: {ConvertBool(info.DmaBufSupported)}");
+            WriteLine($"* Host Memory Register Supported: {ConvertBool(info.HostRegisterSupported)}");
+            WriteLine($"* Pageable Memory Access Supported: {ConvertBool(info.PageableMemoryAccess)}");
+            WriteLine($"* Stream Priorities Supported: {ConvertBool(info.SupportsStreamPriorities)}");
+            WriteLine($"* Unified Function Pointers Supported: {ConvertBool(info.UnifiedFunctionPointers)}");
+            WriteLine($"* Read Only Host Register Supported: {ConvertBool(info.ReadOnlyHostRegisterSupported)}");
+            WriteLine($"* Cluster Launch Supported: {ConvertBool(info.ClusterLaunch)}");
+            WriteLine($"* Multi Cast Supported: {ConvertBool(info.MultiCastSupported)}");
+            WriteLine($"* Map Host Memory: {ConvertBool(info.CanMapHostMemory)}");
+            WriteLine($"* Host Native Atomic: {ConvertBool(info.HostNativeAtomicSupported)}");
+            WriteLine($"* Use Host Pointer For Registered Memory Supported: {ConvertBool(info.CanUseHostPointerForRegisteredMem)}");
+            WriteLine($"* Use 64-Bit Stream Memory Operations Supported Supported: {ConvertBool(info.CanUse64BitStreamMemOps)}");
+            WriteLine($"* Use CU_STREAM_WAIT_VALUE_NOR for Memory Operations Supported: {ConvertBool(info.CanUseStreamWaitValueNOr)}");
+            WriteLine($"* Flush Remote Writes Supported: {ConvertBool(info.CanFlushRemoteWrites)}");
+            WriteLine($"* Pageable Memory Access Uses Host Page Tables Supported: {ConvertBool(info.PageableMemoryAccessUsesHostPageTables)}");
+            WriteLine($"* Direct Managed Memory Access From Host Supported: {ConvertBool(info.DirectManagedMemoryAccessFromHost)}");
+            WriteLine($"* Virtual Memory Management Supported: {ConvertBool(info.VirtualMemoryManagementSupported)}");
+            WriteLine($"* Handle Type Posix File Descriptor Supported: {ConvertBool(info.HandleTypePosixFileDescriptorSupported)}");
+            WriteLine($"* Handle Type Win32 Handle Supported: {ConvertBool(info.HandleTypeWin32HandleSupported)}");
+            WriteLine($"* Handle Type Win32 KMT Handle Supported: {ConvertBool(info.HandleTypeWin32KMTHandleSupported)}");
+            WriteLine($"* Max Access Policy Window Size: {info.MaxAccessPolicyWindowSize}");
+            WriteLine($"* GPU Direct RDMA With CUDA VMM Supported: {ConvertBool(info.GPUDirectRDMAWithCudaVMMSupported)}");
+            WriteLine($"* GPU Direct RDMA Supported: {ConvertBool(info.GpuDirectRDMASupported)}");
+            WriteLine($"* Sparse CUDA Array Supported: {ConvertBool(info.SparseCudaArraySupported)}");
+            WriteLine($"* Mem Pool Supported Handle Types: {info.MempoolSupportedHandleTypes}");
+            WriteLine($"* Deferred Mapping CUDA Array Supported: {ConvertBool(info.DeferredMappingCudaArraySupported)}");
+            WriteLine($"* IPC Event Supported: {ConvertBool(info.IPCEventSupported)}");
+            WriteLine($"* Tensor Map Access Supported: {ConvertBool(info.TensorMapAccessSupported)}");
+            WriteLine($"* Handle Type Fabric Supported: {ConvertBool(info.HandleTypeFabricSupported)}");
+            WriteLine($"* Direct3D 12 CIG Supported: {ConvertBool(info.D3D12CIGSupported)}");
+            WriteLine($"* Cooperative Multi Device Launch Supported: {ConvertBool(info.CooperativeMultiDeviceLaunch)}");
         }
     }
 }
 
+// local functions
+
+static string ConvertBool(bool value) => value ? "yes" : "no";
 static string ConvertBytes(SizeT value) => Convert((long)value, 1024.0, [ "bytes", "KiB", "MiB", "GiB", "TiB", "PiB" ]);
 static string ConvertKiloHertz(int value) => Convert(value, 1000.0, [ "kHz", "MHz", "GHz" ]);
 

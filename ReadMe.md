@@ -4,7 +4,7 @@ This application reports the CUDA properties for each available device.
 
 _Output_:
 ```
-AboutCuda - 2025 (c) Steve Bjorg
+AboutCUDA - 2025 (c) Steve Bjorg
 
 Found 1 device(s)
 
@@ -19,38 +19,39 @@ Found 1 device(s)
 * Processors: 76
 * Clock Rate: 1455.00 MHz
 * Warp Size: 32
+* Registers/Block: 65536
+* Shared Memory/Block: 1024.00 bytes
 * Max Grid Dimensions: (2147483647; 65535; 65535)
 * Max Block Dimensions: (1024; 1024; 64)
 * Max Blocks/Processor: 24
 * Max Threads/Processor: 1536
 * Max Registers/Processor: 65536
-* Max Shared Memory/Processor: 102400
-
---- Blocks ---
+* Max Shared Memory/Processor: 100.00 KiB
 * Max Threads/Block: 1024
-* Registers/Block: 65536
-* Shared Memory/Block: 48.00 KiB
-* Max Shared Memory/Block: 99.00 KiB
+* Max Shared Memory/Block: 48.00 KiB
+* Max Shared Memory (Optin)/Block: 99.00 KiB
 
 --- Memory ---
 * Global: 15.99 GiB
 * Constant: 64.00 KiB
 * Clock Rate: 9.00 GHz
-* Managed Memory: True
-* Unified Addressing: True
-* Integrated: False
-* ECC Enabled: False
+* Managed Memory: yes
+* Unified Addressing: yes
+* Integrated: no
+* ECC Enabled: no
 * L2 Cache Size: 64.00 MiB
 * Max Memory Pitch: 2147483647
 * Max Persisting L2 Cache Size: 44.00 MiB bytes
 * Global Memory Bus Width: 256 bits
 ```
 
-## Options
+## Command Line Options
 
-Additional properties can be reported using the following options:
+Additional details can be reported using the following options:
 * `-a|--all`: show all properties
-* `-f|--features`: show availability of CUDA features
+* `-c|--capability`: show capabilities and enabled features
+* `-t|--texture`: show texture/surface properties
+* `-d|--device`: show device topology properties
 
 ## License
 
